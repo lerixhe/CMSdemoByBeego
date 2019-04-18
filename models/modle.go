@@ -1,9 +1,10 @@
 package models
 
 import (
+	"time"
+
 	"github.com/astaxie/beego/orm"
 	_ "github.com/go-sql-driver/mysql"
-	"time"
 )
 
 type User struct {
@@ -13,13 +14,14 @@ type User struct {
 }
 
 type Article struct {
-	Id      int
-	Title   string    //文章标题
-	Content string    //文章内容
-	Img     string    //图片路径
-	Type    string    //文章分类
-	Time    time.Time //发布时间
-	Count   int       //阅读量
+	Id      int    `orm:"pk;auto"`
+	Title   string `orm:"size(20)"`  //文章标题
+	Content string `orm:"size(500)"` //文章内容
+	Img     string `orm:siza(50)`    //图片路径
+	//	Type    string    //文章分类
+	CreateTime time.Time `orm:"auto_now;type(datetime)"`    //发布时间
+	UpdateTime time.Time `orm:"auto_now_add;type(datetime)` //修改时间
+	Count      int       `orm:"default(0)"`                 //阅读量
 }
 
 func init() {
