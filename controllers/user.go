@@ -8,10 +8,12 @@ import (
 	"github.com/astaxie/beego/orm"
 )
 
+// RegController 路由注册页面
 type RegController struct {
 	beego.Controller
 }
 
+// ShowReg 处理注册页面get请求
 func (c *RegController) ShowReg() {
 	c.TplName = "register.html"
 }
@@ -43,18 +45,22 @@ func (c *RegController) HandleReg() {
 	user.Name = name
 	user.Passwd = password
 	o.Insert(&user)
-	c.Ctx.WriteString("注册成功")
+	//c.Ctx.WriteString("注册成功")
+	c.Redirect("/", 302)
 
 }
 
+//LoginController 登录路由
 type LoginController struct {
 	beego.Controller
 }
 
+//ShowLogin 路由登录界面的get请求
 func (c *LoginController) ShowLogin() {
 	c.TplName = "login.html"
 }
 
+// HandleLogin 处理登录
 func (c *LoginController) HandleLogin() {
 	name := c.GetString("userName")
 	password := c.GetString("password")
@@ -80,5 +86,4 @@ func (c *LoginController) HandleLogin() {
 		fmt.Println("密码错误")
 		c.TplName = "login.html"
 	}
-
 }
