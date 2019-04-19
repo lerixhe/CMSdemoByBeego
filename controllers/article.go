@@ -87,7 +87,21 @@ func (this *ArticleController) ShowContent() {
 	}
 	content := models.Article{Id: id}
 	o := orm.NewOrm()
-	o.Read(&content)
+	err = o.Read(&content)
+	if err != nil {
+		fmt.Println("查询数据失败：", err)
+		return
+	}
+	//阅读量+1并写回数据库
+	content.Count++
+	o.Update(&content)
 	this.Data["content"] = content
 	this.TplName = "content.html"
+}
+func (this *ArticleController) HandleDelete() {
+	/*思路
+	1.被点击的url传值
+	2.执行对应的删除操作
+	*/
+	this.TplName = "index.html"
 }

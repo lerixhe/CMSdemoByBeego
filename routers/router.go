@@ -13,5 +13,6 @@ func init() {
 	beego.Router("/ShowArticle", &controllers.ArticleController{}, "get:ShowArticleList")
 	beego.Router("/AddArticle", &controllers.ArticleController{}, "get:ShowAddArticle;post:HandleAddArticle")
 	beego.Router("/content", &controllers.ArticleController{}, "get:ShowContent")
+	beego.Router("/DeleteArticle", &controllers.ArticleController{}, "get:HandleDelete")
 
 }
