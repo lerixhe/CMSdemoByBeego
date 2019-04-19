@@ -25,7 +25,7 @@ type Article struct {
 }
 
 func init() {
-	orm.RegisterDataBase("default", "mysql", "mysql:123456@tcp(94.191.18.219:3306)/CMSdb?charset=utf8")
+	orm.RegisterDataBase("default", "mysql", "mysql:123456@tcp(94.191.18.219:3306)/CMSdb?charset=utf8&loc=Local")
 	orm.RegisterModel(new(User), new(Article))
 	orm.RunSyncdb("default", false, true)
 }

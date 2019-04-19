@@ -16,6 +16,13 @@ type ArticleController struct {
 }
 
 func (this *ArticleController) ShowArticleList() {
+	o := orm.NewOrm()
+	//创建查询器
+	qs := o.QueryTable("article")
+	var articles []models.Article
+	qs.All(&articles) //select * from article
+	fmt.Println(articles)
+	this.Data["articles"] = articles
 	this.TplName = "index.html"
 }
 func (this *ArticleController) ShowAddArticle() {
@@ -71,4 +78,16 @@ func (this *ArticleController) HandleAddArticle() {
 		fmt.Println("插入错误:", err)
 		return
 	}
+}
+func (this *ArticleController) ShowContent() {
+	id, err := this.GetInt("id")
+	if err != nil {
+		fmt.Println("获取ID失败：", err)
+		return
+	}
+	content := models.Article{Id: id}
+	o := orm.NewOrm()
+	o.Read(&content)
+	this.Data["content"] = content
+	this.TplName = "content.html"
 }
