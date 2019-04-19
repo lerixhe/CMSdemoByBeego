@@ -103,5 +103,18 @@ func (this *ArticleController) HandleDelete() {
 	1.被点击的url传值
 	2.执行对应的删除操作
 	*/
-	this.TplName = "index.html"
+	id, err := this.GetInt("id")
+	if err != nil {
+		fmt.Println("获取ID失败：", err)
+		return
+	}
+	article := models.Article{Id: id}
+	o := orm.NewOrm()
+	_, err = o.Delete(&article)
+	if err != nil {
+		fmt.Println("删除数据失败：", err)
+		return
+	}
+	//this.TplName = "ShowArticle.html"
+	this.Redirect("ShowArticle.html", 302)
 }

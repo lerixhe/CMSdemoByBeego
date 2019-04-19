@@ -68,10 +68,10 @@
                 {{range $index,$val:= .articles}}
                 <tr>
                     <td>{{$val.Title}}</td>
-                    <td><a href="/content?id={{.Id}}">查看详情</a></td>
+                    <td><a href="/content?id={{$val.Id}}">查看详情</a></td>
                     <td>{{$val.CreateTime.Format "2006-01-02 15:04:05"}}</td>
                     <td>{{$val.Count}}</td>
-                    <td><a href="#" class="dels">删除</a></td>
+                    <td><a href="/DeleteArticle?id={{$val.Id}}" class="dels">删除</a></td>
                     <td><a href="#">编辑</a></td>
                     <td>财经新闻</td>
                 </tr>
