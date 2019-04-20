@@ -45,7 +45,8 @@
             </div>
             <div class="form_group">
                 <label>上传图片：</label>
-                <img src="{{.article.Img}}" style="max-height:40px;max-width: 40px">
+                <img src="{{.article.Img}}"  style="max-height:40px;max-width: 40px">
+                <input name="oldimagepath" value="{{.article.Img}}" type="hidden">
                 <input type="file" name="uploadname" class="input_file">
             </div>
             <div class="form_group indent_group line_top">

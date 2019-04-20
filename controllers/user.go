@@ -62,11 +62,12 @@ func (c *LoginController) ShowLogin() {
 
 // HandleLogin 处理登录
 func (c *LoginController) HandleLogin() {
+	c.TplName = "login.html"
 	name := c.GetString("userName")
 	password := c.GetString("password")
 	if name == "" || password == "" {
 		fmt.Println("用户名或密码不能为空")
-		c.TplName = "login.html"
+		c.Data["errmsg"] = "用户名或密码不能为空"
 		return
 	}
 	fmt.Println(name, password)
@@ -75,15 +76,16 @@ func (c *LoginController) HandleLogin() {
 	err := o.Read(&user, "name")
 	if err != nil {
 		fmt.Println("读取错误")
-		c.TplName = "login.html"
+		c.Data["errmsg"] = "发生错误"
 		return
 	}
 
 	if user.Passwd == password {
 		fmt.Println("密码正确")
-		c.Ctx.WriteString("登录成功")
+		c.Data["errmsg"] = "登录成功"
+		c.Redirect("/ShowArticle", 302)
 	} else {
 		fmt.Println("密码错误")
-		c.TplName = "login.html"
+		c.Data["errmsg"] = "登录失败，密码错误"
 	}
 }
