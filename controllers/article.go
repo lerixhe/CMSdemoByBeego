@@ -3,6 +3,7 @@ package controllers
 import (
 	"CMSdemoByBeego/models"
 	"fmt"
+	"math"
 	"path"
 	"time"
 
@@ -20,8 +21,43 @@ func (this *ArticleController) ShowArticleList() {
 	//创建查询器
 	qs := o.QueryTable("article")
 	var articles []models.Article
-	qs.All(&articles) //select * from article
-	fmt.Println(articles)
+	//qs.All(&articles) //select * from article
+
+	//分页实现
+	count, err := qs.Count()
+	if err != nil {
+		fmt.Println("获取记录数错误：", err)
+		return
+	}
+
+	//定义页码
+	pageIndex, err := this.GetInt("pageIndex")
+	if err != nil {
+		//若未获取到页码，设置默认页码1
+		pageIndex = 1
+	}
+	//定义每页大小
+	pageSize := 3
+	//得出开始位置
+	start := pageSize * (pageIndex - 1)
+	//得出总页数
+	pageCount := int(math.Ceil(float64(count) / float64(pageSize)))
+	//参数1：限制获取的条数，参数2，偏移量，即开始位置
+	qs.Limit(pageSize, start).All(&articles)
+
+	//定义页码按钮启用状态
+	enablelast, enablenext := true, true
+	if pageIndex == 1 {
+		enablelast = false
+	}
+	if pageIndex == pageCount {
+		enablenext = false
+	}
+	this.Data["EnableNext"] = enablenext
+	this.Data["EnableLast"] = enablelast
+	this.Data["count"] = count
+	this.Data["pageCount"] = pageCount
+	this.Data["pageIndex"] = pageIndex
 	this.Data["articles"] = articles
 	this.TplName = "index.html"
 }
@@ -208,4 +244,35 @@ func (this *ArticleController) HandleUpdate() {
 		return
 	}
 	this.Redirect("/ShowArticle", 302)
+}
+
+func (c *ArticleController) ShowAddType() {
+	c.TplName = "addType.html"
+	var types []models.ArticleType
+	o := orm.NewOrm()
+	o.QueryTable("article_type").All(&types)
+	c.Data["types"] = types
+}
+func (c *ArticleController) HandleAddType() {
+	var articleType models.ArticleType
+	if articleType.TypeName = c.GetString("typeName"); articleType.TypeName == "" {
+		fmt.Println("类型不能为空")
+		c.Redirect("/AddArticleType", 302)
+		return
+	}
+	o := orm.NewOrm()
+	o.Insert(&articleType)
+	c.Redirect("/AddArticleType", 302)
+}
+func (c *ArticleController) HandleDeleteType() {
+	id, err := c.GetInt("id")
+	if err != nil {
+		fmt.Println("获取ID失败：", err)
+		return
+	}
+	articleType := models.ArticleType{Id: id}
+	o := orm.NewOrm()
+	o.Delete(&articleType)
+	c.Redirect("/AddArticleType", 302)
+
 }

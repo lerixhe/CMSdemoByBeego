@@ -15,5 +15,9 @@ func init() {
 	beego.Router("/content", &controllers.ArticleController{}, "get:ShowContent")
 	beego.Router("/DeleteArticle", &controllers.ArticleController{}, "get:HandleDelete")
 	beego.Router("/UpdateArticle", &controllers.ArticleController{}, "get:ShowUpdate;post:HandleUpdate")
+	//添加文章类型
+	beego.Router("/AddArticleType", &controllers.ArticleController{}, "get:ShowAddType;post:HandleAddType")
+	//删除文章类型
+	beego.Router("/DeleteArticleType", &controllers.ArticleController{}, "get:HandleDeleteType")
 
 }
