@@ -3,6 +3,7 @@ package controllers
 import (
 	"CMSdemoByBeego/models"
 	"fmt"
+	"time"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/orm"
@@ -30,7 +31,6 @@ func (c *RegController) HandleReg() {
 	//1. 取得用户数据
 	name := c.GetString("userName")
 	password := c.GetString("password")
-	fmt.Println(name, password)
 
 	//2. 处理用户数据
 	if name == "" || password == "" {
@@ -57,20 +57,42 @@ type LoginController struct {
 
 //ShowLogin 路由登录界面的get请求
 func (c *LoginController) ShowLogin() {
+
+	//尝试从cookies拿用户名
+	name := c.Ctx.GetCookie("username")
+	if name != "" {
+		//默认勾选
+		c.Data["checked"] = "checked"
+	}
+	c.Data["name"] = name
 	c.TplName = "login.html"
+
 }
 
 // HandleLogin 处理登录
 func (c *LoginController) HandleLogin() {
 	c.TplName = "login.html"
+
 	name := c.GetString("userName")
 	password := c.GetString("password")
+	remember := c.GetString("remember")
+	fmt.Println(name, password, remember)
+
+	//处理用户名
 	if name == "" || password == "" {
 		fmt.Println("用户名或密码不能为空")
 		c.Data["errmsg"] = "用户名或密码不能为空"
 		return
 	}
-	fmt.Println(name, password)
+
+	//处理复选框——记住用户名
+	if remember == "on" {
+		c.Ctx.SetCookie("username", name, 3600*time.Second)
+		c.Data["checked"] = "checked"
+	} else {
+		c.Ctx.SetCookie("username", name, -1)
+		c.Data["checked"] = ""
+	}
 	o := orm.NewOrm()
 	user := models.User{Name: name}
 	err := o.Read(&user, "name")
@@ -80,12 +102,14 @@ func (c *LoginController) HandleLogin() {
 		return
 	}
 
-	if user.Passwd == password {
-		fmt.Println("密码正确")
-		c.Data["errmsg"] = "登录成功"
-		c.Redirect("/ShowArticle", 302)
-	} else {
+	if user.Passwd != password {
 		fmt.Println("密码错误")
 		c.Data["errmsg"] = "登录失败，密码错误"
+		return
 	}
+	c.Data["errmsg"] = "登录成功"
+	//将用户名存入cookie
+	//c.Ctx.SetCookie("username", name, 3600*time.Second)
+
+	c.Redirect("/ShowArticle", 302)
 }
