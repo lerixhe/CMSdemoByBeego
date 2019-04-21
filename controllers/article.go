@@ -16,35 +16,51 @@ type ArticleController struct {
 	beego.Controller
 }
 
-func (this *ArticleController) ShowArticleList() {
+func (c *ArticleController) ShowArticleList() {
 	o := orm.NewOrm()
-	//创建查询器
+	//创建文章表查询器，但不查询
 	qs := o.QueryTable("article")
-	var articles []models.Article
-	//qs.All(&articles) //select * from article
+	var articles []models.Article //qs.All(&articles) //select * from article
+	//创建文章类型查询器，并查询所有类型
+	articletypes := []models.ArticleType{}
+	o.QueryTable("article_type").All(&articletypes)
 
-	//分页实现
-	count, err := qs.Count()
-	if err != nil {
-		fmt.Println("获取记录数错误：", err)
-		return
-	}
-
-	//定义页码
-	pageIndex, err := this.GetInt("pageIndex")
+	//获取本次查询的页码
+	pageIndex, err := c.GetInt("pageIndex")
 	if err != nil {
 		//若未获取到页码，设置默认页码1
 		pageIndex = 1
 	}
-	//定义每页大小
+	//定义每页大小，即本次请求的条数
 	pageSize := 3
-	//得出开始位置
+
+	//根据以上信息，获取开始查询的位置
 	start := pageSize * (pageIndex - 1)
+
+	//使用文章查询器，简单获得记录总数
+	count, err := qs.RelatedSel("ArticleType").Count()
+	if err != nil {
+		fmt.Println("获取记录数错误：", err)
+		return
+	}
+	//根据查询头和查询量，开始查询数据
+	//参数1：限制获取的条数，参数2，偏移量，即开始位置
+	qs.Limit(pageSize, start).RelatedSel("ArticleType").All(&articles)
+
+	//加入文章类型筛选，默认全部,选择类型后，再次筛选。
+	selectedtype := c.GetString("select")
+	if selectedtype == "" || selectedtype == "全部类型" {
+		fmt.Println("本次GET请求全部,未加入select参数,默认全部")
+	} else {
+		count, err = qs.RelatedSel("ArticleType").Filter("ArticleType__TypeName", selectedtype).Count()
+		if err != nil {
+			fmt.Println("获取记录数错误：", err)
+			return
+		}
+		qs.Limit(pageSize, start).RelatedSel("ArticleType").Filter("ArticleType__TypeName", selectedtype).All(&articles)
+	}
 	//得出总页数
 	pageCount := int(math.Ceil(float64(count) / float64(pageSize)))
-	//参数1：限制获取的条数，参数2，偏移量，即开始位置
-	qs.Limit(pageSize, start).All(&articles)
-
 	//定义页码按钮启用状态
 	enablelast, enablenext := true, true
 	if pageIndex == 1 {
@@ -53,26 +69,47 @@ func (this *ArticleController) ShowArticleList() {
 	if pageIndex == pageCount {
 		enablenext = false
 	}
-	this.Data["EnableNext"] = enablenext
-	this.Data["EnableLast"] = enablelast
-	this.Data["count"] = count
-	this.Data["pageCount"] = pageCount
-	this.Data["pageIndex"] = pageIndex
-	this.Data["articles"] = articles
-	this.TplName = "index.html"
+	c.Data["typename"] = selectedtype
+	c.Data["articletypes"] = articletypes
+	c.Data["EnableNext"] = enablenext
+	c.Data["EnableLast"] = enablelast
+	c.Data["count"] = count
+	c.Data["pageCount"] = pageCount
+	c.Data["pageIndex"] = pageIndex
+	c.Data["articles"] = articles
+	c.TplName = "index.html"
 }
-func (this *ArticleController) ShowAddArticle() {
-	this.TplName = "add.html"
+func (c *ArticleController) HandleTypeSelected() {
+	selectedtype := c.GetString("select")
+	articles := []models.Article{}
+	o := orm.NewOrm()
+	o.QueryTable("article").RelatedSel("ArticleType").Filter("ArticleType__TypeName", selectedtype).All(&articles)
+	c.Data["artciles"] = articles
+
+	//文章类型下拉
+	articletypes := []models.ArticleType{}
+	o.QueryTable("article_type").All(&articletypes)
+	c.Data["articletypes"] = articletypes
+	c.TplName = "index.html"
 }
-func (this *ArticleController) HandleAddArticle() {
-	this.TplName = "add.html"
+
+func (c *ArticleController) ShowAddArticle() {
+	//文章类型下拉
+	o := orm.NewOrm()
+	articletypes := []models.ArticleType{}
+	o.QueryTable("article_type").All(&articletypes)
+	c.Data["articletypes"] = articletypes
+	c.TplName = "add.html"
+}
+func (c *ArticleController) HandleAddArticle() {
+	c.TplName = "add.html"
 
 	//取得post数据，使用getfile取得文件，注意设置enctype
-	name := this.GetString("articleName")
-	content := this.GetString("content")
-
+	name := c.GetString("articleName")
+	content := c.GetString("content")
+	//取得上传文件，需判断是否传了文件
 	var filename string
-	f, h, err := this.GetFile("uploadname")
+	f, h, err := c.GetFile("uploadname")
 	if err != nil {
 		fmt.Println("文件上传失败:", err)
 	} else {
@@ -95,7 +132,7 @@ func (this *ArticleController) HandleAddArticle() {
 		filename = time.Now().Format("20060102150405") + ext
 
 		//保存文件到某路径下，程序默认当前在项目的根目录，故注意相对路径
-		err = this.SaveToFile("uploadname", "./static/img/"+filename)
+		err = c.SaveToFile("uploadname", "./static/img/"+filename)
 		if err != nil {
 			fmt.Println("文件保存失败：", err)
 			return
@@ -103,23 +140,32 @@ func (this *ArticleController) HandleAddArticle() {
 		defer f.Close()
 	}
 
-	//插入数据库
 	o := orm.NewOrm()
-	article := models.Article{}
-	article.Title = name
-	article.Content = content
+	//取得文章类型
+	selectedtype := c.GetString("select")
+	//利用此类型获取完整对象
+	articletype := models.ArticleType{TypeName: selectedtype}
+	o.Read(&articletype, "TypeName")
+	//已知某个字段，查询所有字段时，如果字段为主键，则可省略，否则必须填列名。
+
+	fmt.Println("aaaaaaaaa:", articletype.Id)
+	article := models.Article{Title: name, Content: content, ArticleType: &articletype}
+	//根据文件上传情况，判断是否更新路径
 	if filename != "" {
 		article.Img = "./static/img/" + filename
 	}
+	//插入数据库
+
 	_, err = o.Insert(&article)
 	if err != nil {
 		fmt.Println("插入错误:", err)
 		return
 	}
-	this.Redirect("/ShowArticle", 302)
+
+	c.Redirect("/ShowArticle", 302)
 }
-func (this *ArticleController) ShowContent() {
-	id, err := this.GetInt("id")
+func (c *ArticleController) ShowContent() {
+	id, err := c.GetInt("id")
 	if err != nil {
 		fmt.Println("获取ID失败：", err)
 		return
@@ -134,16 +180,16 @@ func (this *ArticleController) ShowContent() {
 	//阅读量+1并写回数据库
 	content.Count++
 	o.Update(&content)
-	this.Data["content"] = content
-	this.TplName = "content.html"
+	c.Data["content"] = content
+	c.TplName = "content.html"
 }
-func (this *ArticleController) HandleDelete() {
+func (c *ArticleController) HandleDelete() {
 	/*思路
 	1.被点击的url传值
 	2.执行对应的删除操作
 	*/
-	this.TplName = ""
-	id, err := this.GetInt("id")
+	c.TplName = ""
+	id, err := c.GetInt("id")
 	if err != nil {
 		fmt.Println("获取ID失败：", err)
 		return
@@ -155,8 +201,8 @@ func (this *ArticleController) HandleDelete() {
 		fmt.Println("删除数据失败：", err)
 		return
 	}
-	//this.TplName = "ShowArticle.html"
-	this.Redirect("ShowArticle.html", 302)
+	//c.TplName = "ShowArticle.html"
+	c.Redirect("/ShowArticle", 302)
 }
 
 func (c *ArticleController) ShowUpdate() {
@@ -181,24 +227,24 @@ func (c *ArticleController) ShowUpdate() {
 }
 
 // HandleUpdate 处理更新
-func (this *ArticleController) HandleUpdate() {
-	this.TplName = "update.html"
+func (c *ArticleController) HandleUpdate() {
+	c.TplName = "update.html"
 	//取得post数据，使用getfile取得文件，注意设置enctype
-	name := this.GetString("articleName")
-	content := this.GetString("content")
-	oldimagepath := this.GetString("oldimagepath")
+	name := c.GetString("articleName")
+	content := c.GetString("content")
+	oldimagepath := c.GetString("oldimagepath")
 
 	var filename string
-	id, err := this.GetInt("id")
+	id, err := c.GetInt("id")
 	if err != nil {
 		fmt.Println("id获取失败：", err)
 		return
 	}
 	article := models.Article{Id: id, Title: name, Content: content, Img: oldimagepath}
-	this.Data["article"] = article
-	f, h, err := this.GetFile("uploadname")
+	c.Data["article"] = article
+	f, h, err := c.GetFile("uploadname")
 	if err != nil {
-		this.Data["errmsg"] = "文件上传失败"
+		c.Data["errmsg"] = "文件上传失败"
 	} else {
 		/*保存之前先做校验处理:
 		1.校验文件类型
@@ -209,22 +255,22 @@ func (this *ArticleController) HandleUpdate() {
 		//fmt.Println(ext)
 		if ext != ".jpg" && ext != ".png" && ext != "jpeg" {
 			fmt.Println(err)
-			this.Data["errmsg"] = "文件类型错误"
+			c.Data["errmsg"] = "文件类型错误"
 			return
 		}
 
 		if h.Size > 5000000 {
 			fmt.Println(err)
-			this.Data["errmsg"] = "文件超出大小"
+			c.Data["errmsg"] = "文件超出大小"
 			return
 		}
 		filename = time.Now().Format("20060102150405") + ext
 
 		//保存文件到某路径下，程序默认当前在项目的根目录，故注意相对路径
-		err = this.SaveToFile("uploadname", "./static/img/"+filename)
+		err = c.SaveToFile("uploadname", "./static/img/"+filename)
 		if err != nil {
 			fmt.Println("文件保存失败：", err)
-			this.Data["errmsg"] = "文件保存失败"
+			c.Data["errmsg"] = "文件保存失败"
 			return
 		}
 		defer f.Close()
@@ -240,10 +286,10 @@ func (this *ArticleController) HandleUpdate() {
 	_, err = o.Update(&article, "title", "content", "img", "create_time", "update_time")
 	if err != nil {
 		fmt.Println("更新错误:", err)
-		this.Data["errmsg"] = "更新失败"
+		c.Data["errmsg"] = "更新失败"
 		return
 	}
-	this.Redirect("/ShowArticle", 302)
+	c.Redirect("/ShowArticle", 302)
 }
 
 func (c *ArticleController) ShowAddType() {

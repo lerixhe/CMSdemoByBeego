@@ -13,6 +13,10 @@
                     return false
                 }
             })
+            $("#select").change(function(){
+                $("#form").submit()
+            })
+            // #调用id，.调用class
         }
     </script>
 </head>
@@ -45,12 +49,15 @@
         </div>
         <div class="pannel">
             <span class="sel_label">请选择文章分类：</span>
-            <select name="select" id="select" class="sel_opt">
-                        <option selected="true">财经新闻</option>
-                <option>体育新闻</option>
-                <option>科技新闻</option>
-            </select>
-
+           <form id="form" method="GET" action="/ShowArticle">
+                <select name="select" id="select" class="sel_opt">
+                    <option selected="true">全部类型</option>
+                    {{range .articletypes}}
+                    <option >{{.TypeName}}</option>
+                    {{end}}
+                </select>
+                <input type="submit" style="display:none">
+            </form>
             <table class="common_table">
                 <tr>
                     <th width="40%">文章标题</th>
@@ -83,7 +90,8 @@
                     <td>{{$val.Count}}</td>
                     <td><a href="/DeleteArticle?id={{$val.Id}}" class="dels">删除</a></td>
                     <td><a href="/UpdateArticle?id={{$val.Id}}">编辑</a></td>
-                    <td>财经新闻</td>
+                    <td>{{$val.ArticleType.TypeName}}</td>
+                    <!-- 跨表拿数据，需确保查询器增加了relatedsel函数 -->
                 </tr>
                 {{end}}
             </table>
@@ -91,12 +99,12 @@
             <ul class="pagenation">
                 <li><a href="/ShowArticle?pageIndex=1">首页</a></li>
                 {{if compare .EnableLast true}}
-                <li><a href="/ShowArticle?pageIndex={{.pageIndex | ShowLastPage}}">上一页 </a> </li>
+                <li><a href="/ShowArticle?pageIndex={{.pageIndex | ShowLastPage}}&select={{.typename}}">上一页 </a> </li>
                 {{else}}
                 <li>上一页</li>
                 {{end}}
                 {{if compare .EnableNext true}}
-                <li> <a href="/ShowArticle?pageIndex={{.pageIndex | ShowNextPage}}">下一页</a></li>
+                <li> <a href="/ShowArticle?pageIndex={{.pageIndex | ShowNextPage}}&select={{.typename}}">下一页</a></li>
                 {{else}}
                 <li>下一页</li>
                 {{end}}
