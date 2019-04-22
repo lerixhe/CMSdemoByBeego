@@ -32,7 +32,7 @@ func (c *ArticleController) ShowArticleList() {
 		pageIndex = 1
 	}
 	//定义每页大小，即本次请求的条数
-	pageSize := 3
+	pageSize := 10
 
 	//根据以上信息，获取开始查询的位置
 	start := pageSize * (pageIndex - 1)
@@ -69,6 +69,7 @@ func (c *ArticleController) ShowArticleList() {
 	if pageIndex == pageCount {
 		enablenext = false
 	}
+	c.Data["judge"] = selectedtype
 	c.Data["typename"] = selectedtype
 	c.Data["articletypes"] = articletypes
 	c.Data["EnableNext"] = enablenext

@@ -18,6 +18,25 @@
             })
             // #调用id，.调用class
         }
+        // window.onload=function(){
+        //     $(".dels").click(function(){
+        //         if(!confirm("是否删除？")){
+        //             return false
+        //         }
+        //     })
+           
+
+        //     $("#select").change(function(){
+        //         var val=$(this).val();
+        //         $.ajax( {  
+        //         type : "GET",  
+        //         url : "/ShowArticle",  
+        //         data :   $("#form").val(),
+                
+        //     });  
+        //     })
+            //#调用id，.调用class
+        // }
     </script>
 </head>
 <body>
@@ -51,9 +70,9 @@
             <span class="sel_label">请选择文章分类：</span>
            <form id="form" method="GET" action="/ShowArticle">
                 <select name="select" id="select" class="sel_opt">
-                    <option selected="true">全部类型</option>
+                    <option >全部类型</option>
                     {{range .articletypes}}
-                    <option >{{.TypeName}}</option>
+                    <option selected>{{.TypeName}}</option>
                     {{end}}
                 </select>
                 <input type="submit" style="display:none">
