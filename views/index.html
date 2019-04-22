@@ -72,7 +72,7 @@
                 <select name="select" id="select" class="sel_opt">
                     <option >全部类型</option>
                     {{range .articletypes}}
-                    <option selected>{{.TypeName}}</option>
+                    <option selected="{{(.judge==.TypeName)?true:false}}">{{.TypeName}}</option>
                     {{end}}
                 </select>
                 <input type="submit" style="display:none">
