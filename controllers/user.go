@@ -85,7 +85,7 @@ func (c *LoginController) HandleLogin() {
 		return
 	}
 
-	//处理复选框——记住用户名
+	//处理复选框——记住用户名，不必非得登录成功才存储
 	if remember == "on" {
 		c.Ctx.SetCookie("username", name, 3600*time.Second)
 		c.Data["checked"] = "checked"
@@ -108,8 +108,17 @@ func (c *LoginController) HandleLogin() {
 		return
 	}
 	c.Data["errmsg"] = "登录成功"
-	//将用户名存入cookie
-	//c.Ctx.SetCookie("username", name, 3600*time.Second)
-
+	//登录成功后，存储到session
+	c.SetSession("username", name)
 	c.Redirect("/ShowArticle", 302)
+}
+
+type LogoutController struct {
+	beego.Controller
+}
+
+func (c *LogoutController) HandleLogout() {
+	//点击注销按钮，删除session
+	c.DelSession("username")
+	c.Redirect("/", 302)
 }

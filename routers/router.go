@@ -19,5 +19,7 @@ func init() {
 	beego.Router("/AddArticleType", &controllers.ArticleController{}, "get:ShowAddType;post:HandleAddType")
 	//删除文章类型
 	beego.Router("/DeleteArticleType", &controllers.ArticleController{}, "get:HandleDeleteType")
-	//
+	//退出路径
+	beego.Router("/logout", &controllers.LogoutController{}, "get:HandleLogout")
+
 }
