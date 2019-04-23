@@ -17,11 +17,7 @@ type ArticleController struct {
 }
 
 func (c *ArticleController) ShowArticleList() {
-	//直接请求本地址，先检查session。注意配置文件开启session
-	if c.GetSession("username") == nil {
-		c.Redirect("/", 302)
-		return
-	}
+
 	o := orm.NewOrm()
 	//创建文章表查询器，但不查询
 	qs := o.QueryTable("article")
@@ -82,6 +78,7 @@ func (c *ArticleController) ShowArticleList() {
 	c.Data["pageCount"] = pageCount
 	c.Data["pageIndex"] = pageIndex
 	c.Data["articles"] = articles
+	//c.Layout = "layout.html"
 	c.TplName = "index.html"
 }
 func (c *ArticleController) HandleTypeSelected() {
@@ -95,6 +92,7 @@ func (c *ArticleController) HandleTypeSelected() {
 	articletypes := []models.ArticleType{}
 	o.QueryTable("article_type").All(&articletypes)
 	c.Data["articletypes"] = articletypes
+	//c.Layout = "layout.html"
 	c.TplName = "index.html"
 }
 
@@ -104,9 +102,11 @@ func (c *ArticleController) ShowAddArticle() {
 	articletypes := []models.ArticleType{}
 	o.QueryTable("article_type").All(&articletypes)
 	c.Data["articletypes"] = articletypes
+	c.Layout = "layout.html"
 	c.TplName = "add.html"
 }
 func (c *ArticleController) HandleAddArticle() {
+	c.Layout = "layout.html"
 	c.TplName = "add.html"
 
 	//取得post数据，使用getfile取得文件，注意设置enctype
@@ -136,8 +136,8 @@ func (c *ArticleController) HandleAddArticle() {
 		}
 		filename = time.Now().Format("20060102150405") + ext
 
-		//保存文件到某路径下，程序默认当前在项目的根目录，故注意相对路径
-		err = c.SaveToFile("uploadname", "./static/img/"+filename)
+		//保存文件到某路径下，程序默认当前路由的路径，故注意相对路径
+		err = c.SaveToFile("uploadname", "../static/img/"+filename)
 		if err != nil {
 			fmt.Println("文件保存失败：", err)
 			return
@@ -157,7 +157,7 @@ func (c *ArticleController) HandleAddArticle() {
 	article := models.Article{Title: name, Content: content, ArticleType: &articletype}
 	//根据文件上传情况，判断是否更新路径
 	if filename != "" {
-		article.Img = "./static/img/" + filename
+		article.Img = "../static/img/" + filename
 	}
 	//插入数据库
 
@@ -167,7 +167,7 @@ func (c *ArticleController) HandleAddArticle() {
 		return
 	}
 
-	c.Redirect("/ShowArticle", 302)
+	c.Redirect("/Article/ShowArticle", 302)
 }
 func (c *ArticleController) ShowContent() {
 	id, err := c.GetInt("id")
@@ -186,6 +186,7 @@ func (c *ArticleController) ShowContent() {
 	content.Count++
 	o.Update(&content)
 	c.Data["content"] = content
+	c.Layout = "layout.html"
 	c.TplName = "content.html"
 }
 func (c *ArticleController) HandleDelete() {
@@ -207,7 +208,7 @@ func (c *ArticleController) HandleDelete() {
 		return
 	}
 	//c.TplName = "ShowArticle.html"
-	c.Redirect("/ShowArticle", 302)
+	c.Redirect("/Article/ShowArticle", 302)
 }
 
 func (c *ArticleController) ShowUpdate() {
@@ -215,6 +216,7 @@ func (c *ArticleController) ShowUpdate() {
 	1. 获取数据，填充数据
 	2. 更新数据，更新数据库，返回列表页
 	*/
+	c.Layout = "layout.html"
 	c.TplName = "update.html"
 	id, err := c.GetInt("id")
 	if err != nil {
@@ -233,6 +235,7 @@ func (c *ArticleController) ShowUpdate() {
 
 // HandleUpdate 处理更新
 func (c *ArticleController) HandleUpdate() {
+	c.Layout = "layout.html"
 	c.TplName = "update.html"
 	//取得post数据，使用getfile取得文件，注意设置enctype
 	name := c.GetString("articleName")
@@ -283,7 +286,7 @@ func (c *ArticleController) HandleUpdate() {
 
 	//若上传了新文件，则使用新文件路径，否则使用旧路径不变
 	if filename != "" {
-		article.Img = "./static/img/" + filename
+		article.Img = "../static/img/" + filename
 	}
 
 	//更新数据库
@@ -294,10 +297,11 @@ func (c *ArticleController) HandleUpdate() {
 		c.Data["errmsg"] = "更新失败"
 		return
 	}
-	c.Redirect("/ShowArticle", 302)
+	c.Redirect("/Article/ShowArticle", 302)
 }
 
 func (c *ArticleController) ShowAddType() {
+	c.Layout = "layout.html"
 	c.TplName = "addType.html"
 	var types []models.ArticleType
 	o := orm.NewOrm()
@@ -308,12 +312,12 @@ func (c *ArticleController) HandleAddType() {
 	var articleType models.ArticleType
 	if articleType.TypeName = c.GetString("typeName"); articleType.TypeName == "" {
 		fmt.Println("类型不能为空")
-		c.Redirect("/AddArticleType", 302)
+		c.Redirect("/Article/AddArticleType", 302)
 		return
 	}
 	o := orm.NewOrm()
 	o.Insert(&articleType)
-	c.Redirect("/AddArticleType", 302)
+	c.Redirect("/Article/AddArticleType", 302)
 }
 func (c *ArticleController) HandleDeleteType() {
 	id, err := c.GetInt("id")
@@ -324,6 +328,6 @@ func (c *ArticleController) HandleDeleteType() {
 	articleType := models.ArticleType{Id: id}
 	o := orm.NewOrm()
 	o.Delete(&articleType)
-	c.Redirect("/AddArticleType", 302)
+	c.Redirect("/Article/AddArticleType", 302)
 
 }

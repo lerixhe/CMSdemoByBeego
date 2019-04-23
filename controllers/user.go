@@ -110,7 +110,7 @@ func (c *LoginController) HandleLogin() {
 	c.Data["errmsg"] = "登录成功"
 	//登录成功后，存储到session
 	c.SetSession("username", name)
-	c.Redirect("/ShowArticle", 302)
+	c.Redirect("/Article/ShowArticle", 302)
 }
 
 type LogoutController struct {
