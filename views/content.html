@@ -1,4 +1,9 @@
-    <div class="main_body" id="main_body">
+{{ template "layout.html" . }}
+{{define "title"}}
+    <title>文章内容</title>
+{{end}}
+{{define "main_body"}}
+   <div class="main_body" id="main_body">
         <div class="breadcrub">
             当前位置：文章管理>文章列表>文章详情
         </div>
@@ -31,4 +36,4 @@
             </div>
         </div>
     </div>
-
+{{end}}

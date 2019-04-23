@@ -2,9 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>后台管理系统</title>
+    {{ block "title" .}} {{end}}
      <link rel="stylesheet" type="text/css" href="/static/css/reset.css">
     <link rel="stylesheet" type="text/css" href="/static/css/main.css">
+    <script type="text/javascript" src="/static/js/jquery-1.12.4.min.js"></script>
+    {{ block "jsp" .}}{{end}}
 </head>
 <body>
     <div class="header">
@@ -28,7 +30,8 @@
         </div>
     </div>
 
-    {{.LayoutContent}}
-
+    <!-- {{.LayoutContent}} -->
+    {{ block "main_body" .}} {{end}}
+   
 </body>
 </html>

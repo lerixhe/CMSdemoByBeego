@@ -1,5 +1,9 @@
-
-        <div class="main_body" id="main_body">
+{{ template "layout.html" . }}
+{{define "title"}}
+    <title>添加文章类型</title>
+{{end}}
+{{define "main_body"}}
+<div class="main_body" id="main_body">
         <div class="breadcrub">
             当前位置：文章管理>添加分类
         </div>
@@ -29,5 +33,5 @@
             </table>
         </div>
     </div>
-
+{{end}}
 

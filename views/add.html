@@ -1,4 +1,8 @@
-
+{{ template "layout.html" . }}
+{{define "title"}}
+    <title>添加文章</title>
+{{end}}
+{{define "main_body"}}
 <div class="main_body" id="main_body">
     <div class="breadcrub">
         当前位置：文章管理>添加文章
@@ -33,3 +37,4 @@
         </form>
     </div>
 </div>
+{{end}}

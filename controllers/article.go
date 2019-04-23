@@ -78,7 +78,7 @@ func (c *ArticleController) ShowArticleList() {
 	c.Data["pageCount"] = pageCount
 	c.Data["pageIndex"] = pageIndex
 	c.Data["articles"] = articles
-	//c.Layout = "layout.html"
+
 	c.TplName = "index.html"
 }
 func (c *ArticleController) HandleTypeSelected() {
@@ -102,11 +102,11 @@ func (c *ArticleController) ShowAddArticle() {
 	articletypes := []models.ArticleType{}
 	o.QueryTable("article_type").All(&articletypes)
 	c.Data["articletypes"] = articletypes
-	c.Layout = "layout.html"
+
 	c.TplName = "add.html"
 }
 func (c *ArticleController) HandleAddArticle() {
-	c.Layout = "layout.html"
+	// c.Layout = "layout.html"
 	c.TplName = "add.html"
 
 	//取得post数据，使用getfile取得文件，注意设置enctype
@@ -186,7 +186,7 @@ func (c *ArticleController) ShowContent() {
 	content.Count++
 	o.Update(&content)
 	c.Data["content"] = content
-	c.Layout = "layout.html"
+
 	c.TplName = "content.html"
 }
 func (c *ArticleController) HandleDelete() {
@@ -216,7 +216,7 @@ func (c *ArticleController) ShowUpdate() {
 	1. 获取数据，填充数据
 	2. 更新数据，更新数据库，返回列表页
 	*/
-	c.Layout = "layout.html"
+	// c.Layout = "layout.html"
 	c.TplName = "update.html"
 	id, err := c.GetInt("id")
 	if err != nil {
@@ -235,7 +235,7 @@ func (c *ArticleController) ShowUpdate() {
 
 // HandleUpdate 处理更新
 func (c *ArticleController) HandleUpdate() {
-	c.Layout = "layout.html"
+
 	c.TplName = "update.html"
 	//取得post数据，使用getfile取得文件，注意设置enctype
 	name := c.GetString("articleName")
@@ -301,7 +301,7 @@ func (c *ArticleController) HandleUpdate() {
 }
 
 func (c *ArticleController) ShowAddType() {
-	c.Layout = "layout.html"
+	//	c.Layout = "layout.html"
 	c.TplName = "addType.html"
 	var types []models.ArticleType
 	o := orm.NewOrm()
