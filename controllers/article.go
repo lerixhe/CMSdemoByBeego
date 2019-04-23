@@ -69,7 +69,7 @@ func (c *ArticleController) ShowArticleList() {
 	if pageIndex == pageCount {
 		enablenext = false
 	}
-
+	c.Data["username"] = c.GetSession("username")
 	c.Data["typename"] = selectedtype
 	c.Data["articletypes"] = articletypes
 	c.Data["EnableNext"] = enablenext
@@ -92,7 +92,7 @@ func (c *ArticleController) HandleTypeSelected() {
 	articletypes := []models.ArticleType{}
 	o.QueryTable("article_type").All(&articletypes)
 	c.Data["articletypes"] = articletypes
-	//c.Layout = "layout.html"
+	c.Data["username"] = c.GetSession("username")
 	c.TplName = "index.html"
 }
 
@@ -102,7 +102,7 @@ func (c *ArticleController) ShowAddArticle() {
 	articletypes := []models.ArticleType{}
 	o.QueryTable("article_type").All(&articletypes)
 	c.Data["articletypes"] = articletypes
-
+	c.Data["username"] = c.GetSession("username")
 	c.TplName = "add.html"
 }
 func (c *ArticleController) HandleAddArticle() {
@@ -185,8 +185,23 @@ func (c *ArticleController) ShowContent() {
 	//阅读量+1并写回数据库
 	content.Count++
 	o.Update(&content)
-	c.Data["content"] = content
 
+	/*处理最近浏览,
+	1. 首先需确定当前浏览者登录状态,获取浏览者信息
+	2. 将浏览者信息插入数据表
+	3. 将历史浏览者信息从表中读出，去重，显示*/
+	if username := c.GetSession("username"); username != nil {
+		user := models.User{Name: username.(string)}
+		o.Read(&user, "Name")
+		//目的：构造多对多查询器,并执行添加插入方法
+		o.QueryM2M(&content, "Users").Add(&user)
+	}
+	//开始读出历史浏览者信息
+	users := []models.User{}
+	o.QueryTable("User").Filter("Articles__Article__Id", content.Id).Distinct().All(&users)
+	c.Data["users"] = users
+	c.Data["content"] = content
+	c.Data["username"] = c.GetSession("username")
 	c.TplName = "content.html"
 }
 func (c *ArticleController) HandleDelete() {
@@ -231,6 +246,7 @@ func (c *ArticleController) ShowUpdate() {
 		return
 	}
 	c.Data["article"] = article
+	c.Data["username"] = c.GetSession("username")
 }
 
 // HandleUpdate 处理更新
@@ -307,6 +323,7 @@ func (c *ArticleController) ShowAddType() {
 	o := orm.NewOrm()
 	o.QueryTable("article_type").All(&types)
 	c.Data["types"] = types
+	c.Data["username"] = c.GetSession("username")
 }
 func (c *ArticleController) HandleAddType() {
 	var articleType models.ArticleType
