@@ -17,6 +17,11 @@ type ArticleController struct {
 }
 
 func (c *ArticleController) ShowArticleList() {
+	//直接请求本地址，先检查session。注意配置文件开启session
+	if c.GetSession("username") == nil {
+		c.Redirect("/", 302)
+		return
+	}
 	o := orm.NewOrm()
 	//创建文章表查询器，但不查询
 	qs := o.QueryTable("article")
@@ -32,8 +37,7 @@ func (c *ArticleController) ShowArticleList() {
 		pageIndex = 1
 	}
 	//定义每页大小，即本次请求的条数
-	pageSize := 10
-
+	pageSize := 6
 	//根据以上信息，获取开始查询的位置
 	start := pageSize * (pageIndex - 1)
 
@@ -69,7 +73,7 @@ func (c *ArticleController) ShowArticleList() {
 	if pageIndex == pageCount {
 		enablenext = false
 	}
-	c.Data["judge"] = selectedtype
+
 	c.Data["typename"] = selectedtype
 	c.Data["articletypes"] = articletypes
 	c.Data["EnableNext"] = enablenext

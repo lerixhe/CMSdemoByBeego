@@ -43,7 +43,7 @@
 
     <div class="header">
         <a href="#" class="logo fl"><img src="/static/img/logo.png" alt="logo"></a>
-        <a href="#" class="logout fr">退 出</a>
+        <a href="/logout" class="logout fr">退 出</a>
     </div>
 
     <div class="side_bar">
@@ -71,8 +71,10 @@
            <form id="form" method="GET" action="/ShowArticle">
                 <select name="select" id="select" class="sel_opt">
                     <option >全部类型</option>
-                    {{range .articletypes}}
-                    <option selected="{{(.judge==.TypeName)?true:false}}">{{.TypeName}}</option>
+
+                    {{range .articletypes}}   
+                    <!-- 此处使用了模板函数 -->
+                            <option {{if eq .TypeName $.typename}} selected {{end}} >{{.TypeName}}</option>
                     {{end}}
                 </select>
                 <input type="submit" style="display:none">
@@ -116,7 +118,7 @@
             </table>
 
             <ul class="pagenation">
-                <li><a href="/ShowArticle?pageIndex=1">首页</a></li>
+                <li><a href="/ShowArticle?pageIndex=1&select={{.typename}}">首页</a></li>
                 {{if compare .EnableLast true}}
                 <li><a href="/ShowArticle?pageIndex={{.pageIndex | ShowLastPage}}&select={{.typename}}">上一页 </a> </li>
                 {{else}}
@@ -127,7 +129,7 @@
                 {{else}}
                 <li>下一页</li>
                 {{end}}
-                <li><a href="/ShowArticle?pageIndex={{.pageCount}}">末页</a></li>
+                <li><a href="/ShowArticle?pageIndex={{.pageCount}}&select={{.typename}}">末页</a></li>
                 <li>共{{.count}}条记录/共{{.pageCount}}页/当前第{{.pageIndex}}页</li>
             </ul>
         </div>
