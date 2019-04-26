@@ -2,11 +2,15 @@ package controllers
 
 import (
 	"CMSdemoByBeego/models"
-	redispool "CMSdemoByBeego/redis"
+	"CMSdemoByBeego/redispool"
+	"bytes"
+	"encoding/gob"
 	"fmt"
 	"math"
 	"path"
 	"time"
+
+	"github.com/gomodule/redigo/redis"
 
 	"github.com/astaxie/beego/orm"
 
@@ -18,19 +22,56 @@ type ArticleController struct {
 }
 
 func (c *ArticleController) ShowArticleList() {
-
+	c.TplName = "index.html"
 	o := orm.NewOrm()
 	//创建文章表查询器，但不查询
 	qs := o.QueryTable("article")
 	var articles []models.Article //qs.All(&articles) //select * from article
-	//创建文章类型查询器，并查询所有类型
-	articletypes := []models.ArticleType{}
-	o.QueryTable("article_type").All(&articletypes)
 
-	//从redis连接池中获取1个连接
+	//先从redis中读取需要的数据
+	fmt.Println("【a】尝试从redis查询数据，若查询成功直接显示")
+	articletypes := []models.ArticleType{}
+	//1. 从redis连接池中获取1个连接
 	conn := redispool.Redisclient.Get()
 	defer conn.Close()
-	conn.Do("set", "articletypes", articletypes)
+
+	//2. 将类型从redis中取出并打印
+	//正常情况下，存进去什么类型，就利用什么类型的回复助手函数。但是自定义类型不支持，需使用字节流存入和取出。
+	relbytes, err := redis.Bytes(conn.Do("get", "articletypes"))
+	if err != nil {
+		fmt.Println("get错误：", err)
+	}
+	dec := gob.NewDecoder(bytes.NewReader(relbytes))
+	dec.Decode(&articletypes)
+	if len(articletypes) != 0 {
+		fmt.Println("【a】从redis中成功查询到数据", articletypes)
+	} else {
+		//如果以上操作没有从redis中读出数据，则去数据库中查询，并存入redis
+		fmt.Println("【a】redis未读取到缓存，本次去mysql中查询数据")
+		o.QueryTable("article_type").All(&articletypes)
+		fmt.Println("【a】从mysql中成功查到数据查询数据", articletypes)
+
+		//将文章类型存入redis数据库
+		//正常情况下，存进去什么类型，就利用什么类型的回复助手函数。但是自定义类型不支持，需使用字节流存入和取出。
+		//首先序列化内容
+		/*
+			1. 初始化一个buffer类型内存，用来存储编码的结果。（造一个内存卡）
+			2. 获取一个编码器对象，并给他刚刚创建的buffer内存（得到一个播放器，把内存卡插进去）
+			3. 使用编码器对象的编码方法开始编码，输入参数为要编码的内容，buffer存储编码结果，返回值为是否出错。
+		*/
+		var buffer bytes.Buffer
+		enc := gob.NewEncoder(&buffer)
+		enc.Encode(articletypes)
+		if _, err := conn.Do("set", "articletypes", buffer.String()); err != nil {
+			fmt.Println("set错误：", err)
+			return
+		}
+		if _, err := conn.Do("EXPIRE", "articletypes", 120); err != nil {
+			fmt.Println("过期时间错误：", err)
+			return
+		}
+		fmt.Println("【a】从将mysql查询dao的数据成功存入redis", articletypes)
+	}
 
 	//获取本次查询的页码
 	pageIndex, err := c.GetInt("pageIndex")
@@ -84,8 +125,6 @@ func (c *ArticleController) ShowArticleList() {
 	c.Data["pageCount"] = pageCount
 	c.Data["pageIndex"] = pageIndex
 	c.Data["articles"] = articles
-
-	c.TplName = "index.html"
 }
 func (c *ArticleController) HandleTypeSelected() {
 	selectedtype := c.GetString("select")
@@ -329,6 +368,41 @@ func (c *ArticleController) ShowAddType() {
 	o.QueryTable("article_type").All(&types)
 	c.Data["types"] = types
 	c.Data["username"] = c.GetSession("username")
+	//刷新页面时更新缓存。
+	err := updateRedisDate("set", "articletypes", types, 300)
+	if err != nil {
+		fmt.Println("更新缓存失败：", err)
+	}
+
+}
+
+//处理更新redis的功能函数:将自定义类型变量序列化存储到redis
+//handlestr为操作名：如get set等
+//key为redis中的key
+//cont为需要序列号写入的自定义类型变量，需要传指针类型
+//time为更新后的过期时间（秒），-1代表永不过期
+func updateRedisDate(handlestr string, key string, cont interface{}, time int) error {
+	fmt.Println("【b】准备序列化：", cont)
+	var buffer bytes.Buffer
+	enc := gob.NewEncoder(&buffer)
+	err := enc.Encode(cont)
+	if err != nil {
+		return err
+	}
+	//	fmt.Println("【b】准备写入redis", buffer.String())
+	conn := redispool.Redisclient.Get()
+	_, err = conn.Do(handlestr, key, buffer.String())
+	if err != nil {
+		return err
+	}
+	fmt.Println("time")
+	_, err = conn.Do("EXPIRE", key, time)
+	if err != nil {
+		return err
+	}
+	fmt.Println("xier")
+	return nil
+
 }
 func (c *ArticleController) HandleAddType() {
 	var articleType models.ArticleType
@@ -345,6 +419,9 @@ func (c *ArticleController) HandleAddType() {
 		return
 	}
 	c.Redirect("/Article/AddArticleType", 302)
+
+	//插入数据库成功后，此处不更新缓存，否则需要再次请求所有类型，刷新页面时更新更合适。
+
 }
 func (c *ArticleController) HandleDeleteType() {
 	id, err := c.GetInt("id")
