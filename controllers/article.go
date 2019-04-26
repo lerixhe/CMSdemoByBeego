@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"CMSdemoByBeego/models"
+	redispool "CMSdemoByBeego/redis"
 	"fmt"
 	"math"
 	"path"
@@ -25,6 +26,11 @@ func (c *ArticleController) ShowArticleList() {
 	//创建文章类型查询器，并查询所有类型
 	articletypes := []models.ArticleType{}
 	o.QueryTable("article_type").All(&articletypes)
+
+	//从redis连接池中获取1个连接
+	conn := redispool.Redisclient.Get()
+	defer conn.Close()
+	conn.Do("set", "articletypes", articletypes)
 
 	//获取本次查询的页码
 	pageIndex, err := c.GetInt("pageIndex")
@@ -317,7 +323,6 @@ func (c *ArticleController) HandleUpdate() {
 }
 
 func (c *ArticleController) ShowAddType() {
-	//	c.Layout = "layout.html"
 	c.TplName = "addType.html"
 	var types []models.ArticleType
 	o := orm.NewOrm()
@@ -332,8 +337,13 @@ func (c *ArticleController) HandleAddType() {
 		c.Redirect("/Article/AddArticleType", 302)
 		return
 	}
+	fmt.Println("您输入的类型名为：", articleType.Id, articleType.TypeName)
 	o := orm.NewOrm()
-	o.Insert(&articleType)
+	_, err := o.Insert(&articleType)
+	if err != nil {
+		fmt.Println("插入数据失败：", err)
+		return
+	}
 	c.Redirect("/Article/AddArticleType", 302)
 }
 func (c *ArticleController) HandleDeleteType() {
