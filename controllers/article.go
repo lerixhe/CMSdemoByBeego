@@ -10,11 +10,9 @@ import (
 	"path"
 	"time"
 
-	"github.com/gomodule/redigo/redis"
-
-	"github.com/astaxie/beego/orm"
-
 	"github.com/astaxie/beego"
+	"github.com/astaxie/beego/orm"
+	"github.com/gomodule/redigo/redis"
 )
 
 type ArticleController struct {
